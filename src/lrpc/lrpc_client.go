@@ -5,15 +5,17 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 type RPCFunc func(arg ...interface{})
 
 type RPCClient struct {
-	count   int
+	count   int32
 	addr    string
 	port    string
 	buffer  []byte
+	lock    *sync.RWMutex
 	conn    net.Conn
 	funcMap *sync.Map
 }
@@ -22,6 +24,7 @@ func NewRPCClient(addr, port string) *RPCClient {
 	return &RPCClient{
 		count:   0,
 		buffer:  make([]byte, 0),
+		lock:    &sync.RWMutex{},
 		addr:    addr,
 		port:    port,
 		funcMap: &sync.Map{},
@@ -45,7 +48,9 @@ func (this *RPCClient) Dial() {
 				}
 				b = b[:n]
 				var results []*RPCResult
+				this.lock.Lock()
 				this.buffer, results = handleResultByte(b)
+				this.lock.Unlock()
 				if results != nil {
 					this.handleResults(results)
 				}
@@ -79,12 +84,12 @@ func (this *RPCClient) handleResults(results []*RPCResult) {
 // method: class.method
 func (this *RPCClient) Call(method string, args []interface{}, fn RPCFunc) {
 	m := strings.Split(method, ".")
-	this.count++
+	atomic.AddInt32(&this.count, 1)
 	call := &RPCCall{
 		Class:  m[0],
 		Method: m[1],
 		Args:   args,
-		Seq:    this.count,
+		Seq:    int(atomic.LoadInt32(&this.count)),
 	}
 
 	this.funcMap.Store(call.Seq, fn)
