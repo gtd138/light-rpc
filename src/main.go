@@ -23,6 +23,10 @@ func (this *Test) Add(a, b int) int {
 	return a + b
 }
 
+func (this *Test) Hello() {
+	fmt.Println("hello!")
+}
+
 func main() {
 	go Server()
 
@@ -49,6 +53,10 @@ func Client() {
 		} else {
 			dtime := GetCurrentTimeStampMS() - startTime
 			fmt.Println("dTime:", dtime)
+
+			client.Call("Test.Hello", nil, func(arg ...interface{}) {
+				fmt.Println("end...")
+			})
 		}
 	})
 }
