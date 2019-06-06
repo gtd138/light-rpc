@@ -5,8 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"fmt"
-
-	"github.com/astaxie/beego/logs"
+	"log"
 )
 
 type RPCCall struct {
@@ -63,7 +62,7 @@ func handleResultByte(bytes []byte) (buf []byte, results []*RPCResult) {
 			}
 			results = append(results, &pack)
 		} else {
-			logs.Error("HandleReceive:反序列化body失败!")
+			log.Println("HandleReceive:反序列化body失败!")
 			buf = bytes
 			break
 		}
@@ -123,7 +122,7 @@ func handleCallByte(bytes []byte) (buf []byte, results []*RPCCall) {
 			}
 			results = append(results, &pack)
 		} else {
-			logs.Error("HandleReceive:反序列化body失败!")
+			log.Println("HandleReceive:反序列化body失败!")
 			buf = bytes
 			break
 		}
