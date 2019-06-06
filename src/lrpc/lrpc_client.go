@@ -15,7 +15,6 @@ type RPCClient struct {
 	addr    string
 	port    string
 	buffer  []byte
-	lock    *sync.RWMutex
 	conn    net.Conn
 	funcMap *sync.Map
 }
@@ -24,7 +23,6 @@ func NewRPCClient(addr, port string) *RPCClient {
 	return &RPCClient{
 		count:   0,
 		buffer:  make([]byte, 0),
-		lock:    &sync.RWMutex{},
 		addr:    addr,
 		port:    port,
 		funcMap: &sync.Map{},
@@ -48,9 +46,7 @@ func (this *RPCClient) Dial() {
 				}
 				b = b[:n]
 				var results []*RPCResult
-				this.lock.Lock()
 				this.buffer, results = handleResultByte(b)
-				this.lock.Unlock()
 				if results != nil {
 					this.handleResults(results)
 				}
