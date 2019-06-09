@@ -76,9 +76,15 @@ func (this *RPCClient) handleResults(results []*RPCResult) {
 	}
 }
 
-// 远程调用
+// 远程调用(无返回值)
 // method: class.method
-func (this *RPCClient) Call(method string, args []interface{}, fn RPCFunc) {
+func (this *RPCClient) Call(method string, args []interface{}) {
+	this.CallReply(method, args, nil)
+}
+
+// 远程调用(有返回值)
+// method: class.method
+func (this *RPCClient) CallReply(method string, args []interface{}, fn RPCFunc) {
 	m := strings.Split(method, ".")
 	atomic.AddInt32(&this.count, 1)
 	call := &RPCCall{
@@ -88,7 +94,9 @@ func (this *RPCClient) Call(method string, args []interface{}, fn RPCFunc) {
 		Seq:    int(atomic.LoadInt32(&this.count)),
 	}
 
-	this.funcMap.Store(call.Seq, fn)
+	if fn != nil {
+		this.funcMap.Store(call.Seq, fn)
+	}
 
 	b := EncodeCallMsg(call)
 	b = AssembleBuffer(b)

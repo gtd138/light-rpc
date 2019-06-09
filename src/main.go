@@ -27,6 +27,10 @@ func (this *Test) Hello() {
 	fmt.Println("hello!")
 }
 
+func (this *Test) GetName() (string, int) {
+	return "Peter", 20
+}
+
 func main() {
 	go Server()
 
@@ -46,7 +50,7 @@ func Client() {
 		client.Dial()
 	}
 
-	client.Call("Test.Add", []interface{}{1, 2}, func(arg ...interface{}) {
+	client.CallReply("Test.Add", []interface{}{1, 2}, func(arg ...interface{}) {
 		count++
 		if count < 10000 {
 			Client()
@@ -54,8 +58,10 @@ func Client() {
 			dtime := GetCurrentTimeStampMS() - startTime
 			fmt.Println("dTime:", dtime)
 
-			client.Call("Test.Hello", nil, func(arg ...interface{}) {
-				fmt.Println("end...")
+			client.Call("Test.Hello", nil)
+
+			client.CallReply("Test.GetName", nil, func(arg ...interface{}) {
+				fmt.Println(arg)
 			})
 		}
 	})

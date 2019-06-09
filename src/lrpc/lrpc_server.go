@@ -89,9 +89,6 @@ func (this *RPCServer) HandleConn(conn net.Conn) {
 func (this *RPCServer) handleFunc(calls []*RPCCall) (results []*RPCResult) {
 	for i := range calls {
 		call := calls[i]
-		r := &RPCResult{
-			Seq: call.Seq,
-		}
 
 		if e, ok := this.RPCObjs.Load(call.Class); ok {
 			obj := reflect.ValueOf(e)
@@ -106,20 +103,23 @@ func (this *RPCServer) handleFunc(calls []*RPCCall) (results []*RPCResult) {
 
 			method := obj.MethodByName(call.Method)
 			values := method.Call(params)
+			var r *RPCResult
 			if values != nil && len(values) > 0 {
-				if r.Return == nil {
-					r.Return = make([]interface{}, 0)
+				r = &RPCResult{
+					Seq:    call.Seq,
+					Return: make([]interface{}, 0),
 				}
+
 				for j := range values {
 					r.Return = append(r.Return, values[j].Interface())
 				}
-			}
 
-			if results == nil {
-				results = make([]*RPCResult, 0)
-			}
+				if results == nil {
+					results = make([]*RPCResult, 0)
+				}
 
-			results = append(results, r)
+				results = append(results, r)
+			}
 		} else {
 			log.Println("obj is not exiset!")
 		}
@@ -130,6 +130,11 @@ func (this *RPCServer) handleFunc(calls []*RPCCall) (results []*RPCResult) {
 
 // 处理rpc结果
 func (this *RPCServer) handleResult(results []*RPCResult, conn net.Conn) {
+	// 没有返回值不处理
+	if results == nil || len(results) <= 0 {
+		return
+	}
+
 	for i := range results {
 		r := results[i]
 		b := EncodeResultMsg(r)
